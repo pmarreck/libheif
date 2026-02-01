@@ -183,7 +183,11 @@ heif_error libde265_new_decoder2(void** dec, const heif_decoder_plugin_options* 
   de265_set_parameter_bool(decoder->ctx, DE265_DECODER_PARAM_DISABLE_DEBLOCKING, 1);
   de265_set_parameter_bool(decoder->ctx, DE265_DECODER_PARAM_DISABLE_SAO, 1);
 #else
-  int nThreads = (options->num_threads ? options->num_threads : 1);
+  // Use the requested thread count directly. When num_threads=0, no worker
+  // threads are created and decoding runs entirely in the calling thread.
+  // This is important for platforms where libde265's worker threads may
+  // crash (e.g., Linux due to GPF in intra_prediction_angular).
+  int nThreads = options->num_threads;
 
   // Worker threads are not supported when running on Emscripten.
   de265_start_worker_threads(decoder->ctx, nThreads);
